@@ -56,27 +56,31 @@ public class HashTable<E extends Comparable<E>> {
      * @param content E The content of a new node, to be placed in the array.
      */
     public void add(E content) {
-        // Create the new node to add to the hashtable
-        Node<E> newNode = new Node<E>(content);
-        // Use the hashcode for the new node's contents to find where to place it in the
-        // underlying array. Use abs in case hashcode < 0.
-        int position = Math.abs(content.hashCode()) % this.underlying.length;
-        // Check if selected position is already in use
-        if (this.underlying[position] == null) {
-            // Selected position not in use. Place the new node here and update the usage of
-            // the underlying array.
-            this.underlying[position] = newNode;
-            this.usage += 1;
-        } else {
-            // Selected position in use. We will append its contents to the new node first,
-            // then place the new node in the selected position. Effectively the new node
-            // becomes the first node of the existing linked list in this position.
-            newNode.setNext(this.underlying[position]);
-            this.underlying[position] = newNode;
-        }
-        // Update the number of nodes
-        this.totalNodes += 1;
-    } // method add
+    //recalculate load factor before putting it in 
+    this.loadFactor = (double) this.usage / this.underlying.length;
+
+    //check if you need a rehash and if the current load factor is equal or higher than the threshhold then you need to rehash
+    if (this.loadFactor >= LOAD_FACTOR_THRESHOLD) {
+        rehash(); //rehashing
+    }
+
+    // make a new node to to hold what we are adding 
+    Node<E> newNode = new Node<E>(content);
+    //calculate where the node should go
+    int position = Math.abs(content.hashCode()) % this.underlying.length;
+//put the node in the correct position and if it is empty place a new node there 
+    if (this.underlying[position] == null) {
+        this.underlying[position] = newNode;
+        this.usage++;
+    } else { //if the spot is being used add a new node in front of the list
+        newNode.setNext(this.underlying[position]); //point the new node to the existing list
+        this.underlying[position] = newNode; //put the new node at the head 
+    }
+    //increase the total number of nodes 
+    this.totalNodes++;
+    //recalulate the load factor
+    this.loadFactor = (double) this.usage / this.underlying.length; // update load factor after insert
+}
 
     /**
      * Searches the underlying array of linked lists for the target value. If the
@@ -90,8 +94,55 @@ public class HashTable<E extends Comparable<E>> {
      *         underlying array; false otherwise.
      */
     public boolean contains(E target) {
+        //get the position 
+        int position = Math.abs(target.hashCode()) % this.underlying.length;
+        //get the head of the node at that position
+        Node<E> current = this.underlying[position];
+        // go across the linked list
+        while (current != null) {
+            if (current.getContent().compareTo(target) == 0) {
+                //the target that was found
+                return true; 
+            }
+            //move to the next node
+            current = current.getNext();
+        }
+        //target that was not found
         return false;
     } // method contains
+
+    private void rehash() {
+        //double the size 
+    Node<E>[] newArray = new Node[this.underlying.length * 2];
+    //make sure to reset it
+    int newUsage = 0;
+    //rehash all the nodes 
+    for (int i = 0; i < this.underlying.length; i++) {
+        Node<E> current = this.underlying[i];
+        while (current != null) {
+            //save the next one
+            Node<E> nextNode = current.getNext();
+            //calculate the position of the current node 
+            int newPos = Math.abs(current.getContent().hashCode()) % newArray.length;
+
+            if (newArray[newPos] == null) {
+                newUsage++;
+                current.setNext(null);
+                newArray[newPos] = current;
+            } else {
+                current.setNext(newArray[newPos]);
+                newArray[newPos] = current;
+            }
+            //move to the next node in the old list
+            current = nextNode;
+        }
+    }
+    //replace the underlying array 
+    this.underlying = newArray;
+    this.usage = newUsage;
+    //recalculate the loadfactor 
+    this.loadFactor = (double) this.usage / this.underlying.length;
+}
 
     /** Constants for toString */
     private static final String LINKED_LIST_HEADER = "\n[ %2d ]: ";
