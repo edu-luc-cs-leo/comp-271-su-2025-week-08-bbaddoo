@@ -118,20 +118,20 @@ public class HashTable<E extends Comparable<E>> {
     int newUsage = 0;
     //rehash all the nodes 
     for (int i = 0; i < this.underlying.length; i++) {
-        Node<E> current = this.underlying[i];
-        while (current != null) {
+        Node<E> current = this.underlying[i]; //start at the head
+        while (current != null) { // go through all the nodes in the list
             //save the next one
             Node<E> nextNode = current.getNext();
             //calculate the position of the current node 
             int newPos = Math.abs(current.getContent().hashCode()) % newArray.length;
-
+            //if the position is empty pleace the current node  and if occupied put the current node at the front of the list
             if (newArray[newPos] == null) {
-                newUsage++;
-                current.setNext(null);
-                newArray[newPos] = current;
+                newUsage++; //increment
+                current.setNext(null); //take off current node 
+                newArray[newPos] = current; //insert
             } else {
-                current.setNext(newArray[newPos]);
-                newArray[newPos] = current;
+                current.setNext(newArray[newPos]); //put current node to the head
+                newArray[newPos] = current; //make that the new head
             }
             //move to the next node in the old list
             current = nextNode;
